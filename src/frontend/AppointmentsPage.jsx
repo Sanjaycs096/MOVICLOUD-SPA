@@ -74,6 +74,14 @@ const appointmentItems = [
   },
 ]
 
+const rooms = [
+  { value: 'Room 101', label: 'Room 101 - Massage Suite' },
+  { value: 'Room 102', label: 'Room 102 - Facial Room' },
+  { value: 'Room 103', label: 'Room 103 - Wellness Suite' },
+  { value: 'Room 104', label: 'Room 104 - Private Therapy' },
+  { value: 'Room 105', label: 'Room 105 - Couples Room' },
+]
+
 const initialFormState = {
   fullName: '',
   gender: '',
@@ -89,6 +97,7 @@ const initialFormState = {
   appointmentTime: '',
   selectedService: 'Swedish Massage',
   assignedTherapist: therapists[0].value,
+  assignedRoom: rooms[0].value,
   paymentMethod: 'Credit/Debit Card',
   discount: '',
   cardHolderName: '',
@@ -112,9 +121,11 @@ const demoFormData = {
   skinType: 'Sensitive, Nut allergy',
   medicalConditions: 'Mild back tension, regular exercise lover',
   preferredService: 'Swedish Massage',
-  appointmentDateTime: '2026-04-15T10:00',
+  appointmentDate: '2026-04-15',
+  appointmentTime: '10:00',
   selectedService: 'Swedish Massage',
   assignedTherapist: 'Sarah Jenkins',
+  assignedRoom: 'Room 101 - Massage Suite',
   discount: '10%',
   cardHolderName: 'Sarah Anderson',
   cardNumber: '4532 1234 5678 9010',
@@ -133,6 +144,28 @@ function AppointmentsView() {
   const [customerName, setCustomerName] = useState('')
   const [isSuccessOpen, setIsSuccessOpen] = useState(false)
   const [step, setStep] = useState(1)
+  const [appointments, setAppointments] = useState([
+    {
+      id: 1,
+      clientName: 'Sarah Anderson',
+      therapist: 'Sarah Jenkins',
+      service: 'Swedish Massage',
+      room: 'Room 101 - Massage Suite',
+      dateTime: 'Apr 14, 10:30 AM',
+      status: 'Confirmed',
+      transactionId: 'TXN12345678'
+    },
+    {
+      id: 2,
+      clientName: 'Michael Chen',
+      therapist: 'Julian Reed',
+      service: 'Deep Tissue Massage',
+      room: 'Room 103 - Wellness Suite',
+      dateTime: 'Apr 14, 2:00 PM',
+      status: 'Pending',
+      transactionId: 'TXN87654321'
+    }
+  ])
 
   const stepCompletion = {
     1:
@@ -150,7 +183,8 @@ function AppointmentsView() {
       Boolean(form.appointmentDate) &&
       Boolean(form.appointmentTime) &&
       Boolean(form.selectedService) &&
-      Boolean(form.assignedTherapist),
+      Boolean(form.assignedTherapist) &&
+      Boolean(form.assignedRoom),
     4: Boolean(form.paymentMethod),
     5: form.termsAccepted,
   }
@@ -179,10 +213,8 @@ function AppointmentsView() {
       setTransactionId(txnId)
       setCustomerName(form.fullName)
       setPaymentSuccess(true)
-      setIsSuccessOpen(true)
-      setIsModalOpen(false)
-      setStep(1)
-      setForm(initialFormState)
+      // Proceed to step 5 instead of closing modal
+      setStep(5)
     }
   }
 
@@ -200,6 +232,20 @@ function AppointmentsView() {
     const txnId = 'TXN' + Date.now().toString().slice(-8)
     setTransactionId(txnId)
     setCustomerName(form.fullName)
+    
+    // Add new appointment to appointments array
+    const newAppointment = {
+      id: appointments.length + 1,
+      clientName: form.fullName,
+      therapist: form.assignedTherapist,
+      service: form.selectedService,
+      room: form.assignedRoom,
+      dateTime: `${form.appointmentDate}, ${form.appointmentTime}`,
+      status: 'Pending', // New appointments start as pending
+      transactionId: txnId
+    }
+    
+    setAppointments([...appointments, newAppointment])
     setPaymentSuccess(true)
     setIsSuccessOpen(true)
     setIsModalOpen(false)
@@ -218,81 +264,158 @@ function AppointmentsView() {
 
   return (
     <div className="view-body appointments-view">
-      <div className="appointments-header flex items-center justify-between gap-4 mb-6">
-        <div>
-          <h3 className="text-[28px] font-semibold">Appointments</h3>
-          <p className="text-sm text-muted">Manage admissions, bookings and therapist assignments.</p>
+      <div className="mb-6">
+        <h3 className="text-[28px] font-semibold">Appointments</h3>
+        <p className="text-sm text-muted">Manage admissions, bookings and therapist assignments.</p>
+      </div>
+
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 font-medium">Today's Total Appointments</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{appointments.length}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
         </div>
+
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 font-medium">Confirmed Appointments</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">{appointments.filter(a => a.status === 'Confirmed').length}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+              <svg className="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 font-medium">Pending Appointments</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">{appointments.filter(a => a.status === 'Pending').length}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+              <svg className="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reminder/Alert Box */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="h-3 w-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-blue-900">Important Reminder</h4>
+            <p className="text-sm text-blue-700 mt-1">New client arrives at 4:30 PM - Room 102 - Facial Room</p>
+          </div>
+        </div>
+      </div>
+
+      {/* New Appointment Button */}
+      <div className="mb-6">
         <button
           type="button"
-          className="rounded-full bg-primary px-5 py-3 text-[13px] font-semibold uppercase tracking-[1px] text-white shadow-soft transition hover:brightness-110"
+          className="rounded-full bg-primary px-6 py-3 text-[13px] font-semibold uppercase tracking-[1px] text-white shadow-soft transition hover:brightness-110"
           onClick={openModal}
         >
-          New Appointment
+          + New Appointment
         </button>
       </div>
 
-      <div className="appointments-grid">
-        <div className="appointments-main">
-          <article className="feature-card wide">
-            <span className="tag">Latest admission</span>
-            <div className="feature-content">
-              <div>
-                <h3>New client intake and booking tracker</h3>
-                <p className="muted">Create admissions quickly and keep every appointment on schedule.</p>
-                <div className="pill-row">
-                  <button type="button" className="pill">Review form</button>
-                  <button type="button" className="pill ghost">Download summary</button>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <div className="appointment-list">
-            {appointmentItems.map((item) => (
-              <div key={item.title} className="appointment-item">
-                <div className="avatar"></div>
-                <div>
-                  <p className="appointment-date">{item.date}</p>
-                  <h5>{item.title}</h5>
-                  <span className="muted">Assigned therapist {item.therapist}</span>
-                </div>
-                <div className="appointment-actions">
-                  <span className={`status-badge ${item.status.toLowerCase()}`}>
-                    {item.status}
-                  </span>
-                  <button type="button" className="pill ghost">Details</button>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Appointment Table */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200">
+          <h4 className="text-lg font-semibold text-slate-900">Appointment Schedule</h4>
         </div>
-
-        <aside className="appointments-side">
-          <div className="tip-card">
-            <h5>Admission checklist</h5>
-            <p className="muted">Collect client details, medical disclosures, and payment terms before confirming.</p>
-          </div>
-          <div className="stats-card">
-            <p className="muted">Today's admissions</p>
-            <div className="stat-row">
-              <span>Total booked</span>
-              <strong>8</strong>
-            </div>
-            <div className="stat-row">
-              <span>Available therapists</span>
-              <strong>3</strong>
-            </div>
-          </div>
-          <div className="prep-card">
-            <p className="muted">Reminder</p>
-            <ul>
-              <li>Require signed consent</li>
-              <li>Confirm therapist availability</li>
-              <li>Review health disclosures</li>
-            </ul>
-          </div>
-        </aside>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Client Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Therapist</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Service</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Room</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date & Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {appointments.map((appointment) => (
+                <tr key={appointment.id} className="hover:bg-slate-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center">
+                        <span className="text-sm font-medium text-slate-600">
+                          {appointment.clientName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-slate-900">{appointment.clientName}</div>
+                        <div className="text-sm text-slate-500">{appointment.transactionId}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.therapist}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.service}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.room}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.dateTime}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      appointment.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' :
+                      appointment.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
+                      appointment.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                      'bg-slate-100 text-slate-800'
+                    }`}>
+                      {appointment.status === 'Confirmed' && 'Confirmed'}
+                      {appointment.status === 'Pending' && 'Pending'}
+                      {appointment.status === 'In Progress' && 'In Progress'}
+                      {appointment.status === 'Completed' && 'Completed'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <button type="button" className="text-slate-600 hover:text-slate-900" title="View">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button type="button" className="text-slate-600 hover:text-slate-900" title="Edit">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button type="button" className="text-red-600 hover:text-red-900" title="Delete">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isModalOpen && (
@@ -524,6 +647,20 @@ function AppointmentsView() {
                           {therapists.map((therapist) => (
                             <option key={therapist.value} value={therapist.value}>
                               {therapist.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block text-sm text-slate-800">
+                        Room assignment
+                        <select
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                          value={form.assignedRoom}
+                          onChange={handleChange('assignedRoom')}
+                        >
+                          {rooms.map((room) => (
+                            <option key={room.value} value={room.value}>
+                              {room.label}
                             </option>
                           ))}
                         </select>
