@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import AppointmentsView from './frontend/AppointmentsPage.jsx'
+import TherapistManagement from './frontend/TherapistManagement.jsx'
 
 const NAV_ITEMS = [
   {
@@ -526,7 +527,7 @@ function AppShell({ view, onNav }) {
 
         {view === 'dashboard' && <DashboardView />}
         {view === 'services' && <ServicesView />}
-        {view === 'therapists' && <TherapistsView />}
+        {view === 'therapists' && <TherapistManagement />}
         {view === 'appointments' && <AppointmentsView />}
         {view === 'offers' && <OffersView />}
       </main>
@@ -725,65 +726,6 @@ function ServicesView() {
           </div>
           <button type="button" className="pill">Learn More</button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function TherapistsView() {
-  return (
-    <div className="view-body">
-      <section className="chip-row">
-        {['All therapists', 'Deep tissue', 'Ayurvedic', 'Available today', 'Energy work', 'Sports therapy'].map(
-          (chip) => (
-            <button
-              key={chip}
-              className={`chip${chip === 'All therapists' ? ' active' : ''}`}
-              type="button"
-            >
-              {chip}
-            </button>
-          )
-        )}
-      </section>
-
-      <section className="therapist-hero">
-        <div className="therapist-portrait"></div>
-        <div className="therapist-quote">
-          <p className="quote">Balance is not something you find, it is something you create.</p>
-          <p className="muted">Dr. Maya Chen, Lead holistic practitioner</p>
-          <button type="button" className="pill">Read more</button>
-        </div>
-        <div className="therapist-copy">
-          <h3>Mastering the art of restoration.</h3>
-          <p className="muted">
-            Each therapist at Sanctuary is hand-selected for their technical
-            mastery and empathetic presence.
-          </p>
-          <div className="status-pill">12 therapists available today</div>
-        </div>
-      </section>
-
-      <section className="card-row">
-        {[
-          { name: 'Sarah Jenkins', role: 'Deep tissue expert' },
-          { name: 'Julian Reed', role: 'Sports therapy' },
-          { name: 'Elena Moretti', role: 'Energy work' },
-        ].map((therapist) => (
-          <div key={therapist.name} className="therapist-card">
-            <div className="avatar large"></div>
-            <h5>{therapist.name}</h5>
-            <span>{therapist.role}</span>
-          </div>
-        ))}
-      </section>
-
-      <div className="cta-banner">
-        <div>
-          <h4>Unsure who to choose?</h4>
-          <p className="muted">Take our 2-minute matching quiz.</p>
-        </div>
-        <button type="button" className="pill">Start quiz</button>
       </div>
     </div>
   )
