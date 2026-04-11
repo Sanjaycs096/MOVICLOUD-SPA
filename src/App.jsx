@@ -78,8 +78,8 @@ const VIEW_META = {
     subtitle: 'Guided by intuition, grounded in expertise.',
   },
   appointments: {
-    title: 'My Journey',
-    subtitle: 'Upcoming and past experiences at a glance.',
+    title: '',
+    subtitle: '',
   },
   offers: {
     title: 'Signature Packages',

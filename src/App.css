@@ -33,7 +33,7 @@
 
 .hero-panel {
   position: relative;
-  color: #f6f2ec;
+  color: lch(89.06% 14.1 91.93);
   background: radial-gradient(
       circle at 20% 10%,
       rgba(255, 255, 255, 0.12),
@@ -167,7 +167,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: radial-gradient(circle, #e7d0a8 0%, #c8a97e 60%);
+  background: radial-gradient(circle, #e7d0a8 0%, #b7aa98 60%);
   box-shadow: 0 0 0 6px rgba(200, 169, 126, 0.18);
 }
 

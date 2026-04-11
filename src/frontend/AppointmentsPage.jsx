@@ -148,25 +148,75 @@ function AppointmentsView() {
   const [appointments, setAppointments] = useState([
     {
       id: 1,
-      clientName: 'Sarah Anderson',
+      clientName: 'Emily Johnson',
+      clientId: '#MS-8342',
       therapist: 'Sarah Jenkins',
       service: 'Swedish Massage',
-      room: 'Room 101 - Massage Suite',
-      dateTime: 'Apr 14, 10:30 AM',
-      status: 'Confirmed',
+      room: 'Tranquil Room',
+      date: 'Oct 22, 2023',
+      time: '10:00 AM - 11:00 AM',
+      status: 'Pending',
       transactionId: 'TXN12345678'
     },
     {
       id: 2,
-      clientName: 'Michael Chen',
-      therapist: 'Julian Reed',
-      service: 'Deep Tissue Massage',
-      room: 'Room 103 - Wellness Suite',
-      dateTime: 'Apr 14, 2:00 PM',
+      clientName: 'Julian Thorne',
+      clientId: '#MS-8832',
+      therapist: 'Sofia Rossi',
+      service: 'Hot Stone',
+      room: 'Cedar Room',
+      date: 'Oct 24, 2023',
+      time: '01:00 PM - 02:30 PM',
       status: 'Pending',
       transactionId: 'TXN87654321'
+    },
+    {
+      id: 3,
+      clientName: 'Sarah Jenkins',
+      clientId: '#MS-9445',
+      therapist: 'Elena Thorne',
+      service: 'Aromatherapy',
+      room: 'Zen Den',
+      date: 'Oct 24, 2023',
+      time: '03:45 PM - 04:45 PM',
+      status: 'Rejected',
+      transactionId: 'TXN98765432'
+    },
+    {
+      id: 4,
+      clientName: 'Beatrice Miller',
+      clientId: '#MS-1022',
+      therapist: 'Marcus Chen',
+      service: 'Swedish',
+      room: 'Lotus Suite',
+      date: 'Oct 25, 2023',
+      time: '09:00 AM - 10:00 AM',
+      status: 'Confirmed',
+      transactionId: 'TXN11223344'
     }
   ])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isEditFormModalOpen, setIsEditFormModalOpen] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState(null)
+  const [filterBy, setFilterBy] = useState('all')
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+
+  // Filter appointments based on search and filter
+  const filteredAppointments = appointments.filter(appointment => {
+    const matchesSearch = searchTerm === '' || 
+      appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.therapist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.room.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.clientId.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesFilter = filterBy === 'all' || appointment.status.toLowerCase() === filterBy.toLowerCase()
+    
+    return matchesSearch && matchesFilter
+  })
 
   const stepCompletion = {
     1:
@@ -234,29 +284,41 @@ function AppointmentsView() {
   }
 
   const handleConfirmBooking = () => {
-    // Generate transaction ID
-    const txnId = 'TXN' + Date.now().toString().slice(-8)
-    setTransactionId(txnId)
-    setCustomerName(form.fullName)
+    // Generate random transaction ID
+    const transactionId = 'TXN' + Math.random().toString(36).substr(2, 9).toUpperCase()
     
-    // Add new appointment to appointments array
+    // Add new appointment to the appointments list
     const newAppointment = {
       id: appointments.length + 1,
       clientName: form.fullName,
+      clientId: '#MS-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
       therapist: form.assignedTherapist,
       service: form.selectedService,
       room: form.assignedRoom,
-      dateTime: `${form.appointmentDate}, ${form.appointmentTime}`,
-      status: 'Pending', // New appointments start as pending
-      transactionId: txnId
+      date: form.appointmentDate,
+      time: form.appointmentTime,
+      status: 'Pending',
+      transactionId: transactionId
     }
     
     setAppointments([...appointments, newAppointment])
-    setPaymentSuccess(true)
-    setIsSuccessOpen(true)
-    setIsModalOpen(false)
-    setStep(1)
-    setForm(initialFormState)
+    setIsPaymentSuccessOpen(true)
+    setTimeout(() => {
+      setIsPaymentSuccessOpen(false)
+      setIsSuccessOpen(true)
+    }, 2000)
+  }
+
+  const handleApproveAppointment = (appointmentId) => {
+    setAppointments(appointments.map(apt => 
+      apt.id === appointmentId ? {...apt, status: 'Confirmed'} : apt
+    ))
+  }
+
+  const handleRejectAppointment = (appointmentId) => {
+    setAppointments(appointments.map(apt => 
+      apt.id === appointmentId ? {...apt, status: 'Rejected'} : apt
+    ))
   }
 
   const handleStepBack = () => {
@@ -270,29 +332,26 @@ function AppointmentsView() {
 
   return (
     <div className="view-body appointments-view">
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="mb-6">
         <div>
           <h3 className="text-[28px] font-semibold">Appointments</h3>
           <p className="text-sm text-muted">Manage admissions, bookings and therapist assignments.</p>
         </div>
-        <button
-          type="button"
-          className="rounded-full bg-primary px-6 py-3 text-[13px] font-semibold uppercase tracking-[1px] text-white shadow-soft transition hover:brightness-110"
-          onClick={openModal}
-        >
-          + New Appointment
-        </button>
       </div>
 
-      {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Today's Total Appointments</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{appointments.length}</p>
+              <p className="text-sm font-medium text-gray-600">TODAY'S TOTAL</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">38</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm font-medium text-green-600">+12%</span>
+                <span className="text-xs text-gray-500">8 more than yesterday</span>
+              </div>
             </div>
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
               <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -300,28 +359,46 @@ function AppointmentsView() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Confirmed Appointments</p>
-              <p className="text-2xl font-bold text-emerald-600 mt-1">{appointments.filter(a => a.status === 'Confirmed').length}</p>
+              <p className="text-sm font-medium text-gray-600">CONFIRMED</p>
+              <p className="text-3xl font-bold text-green-600 mt-1">24</p>
+              <p className="text-xs text-gray-500 mt-2">63% capacity reached</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-              <svg className="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600 font-medium">Pending Appointments</p>
-              <p className="text-2xl font-bold text-amber-600 mt-1">{appointments.filter(a => a.status === 'Pending').length}</p>
+              <p className="text-sm font-medium text-gray-600">PENDING</p>
+              <p className="text-3xl font-bold text-yellow-600 mt-1">09</p>
+              <p className="text-xs text-yellow-600 mt-2">Requires urgent action</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
-              <svg className="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="h-12 w-12 rounded-full bg-yellow-50 flex items-center justify-center">
+              <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl p-6 shadow-sm" style={{backgroundColor: 'lch(89.06% 14.1 91.93)'}}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium" style={{color: '#3e2723'}}>NEXT UP</p>
+              <p className="text-lg font-bold mt-1" style={{color: '#3e2723'}}>Sarah Jenkins</p>
+              <p className="text-sm mt-1" style={{color: '#3e2723'}}>Aromatherapy Session</p>
+              <p className="text-xs mt-2" style={{color: '#3e2723', opacity: 0.9}}>in 14 min</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -329,91 +406,241 @@ function AppointmentsView() {
         </div>
       </div>
 
-      {/* Reminder/Alert Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg className="h-3 w-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+      {/* Search and Filter Bar */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search client, service, or room..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-300 bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{focusRingColor: '#1f4d3e'}}
+            />
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div>
-            <h4 className="text-sm font-semibold text-blue-900">Important Reminder</h4>
-            <p className="text-sm text-blue-700 mt-1">New client arrives at 4:30 PM - Room 102 - Facial Room</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <button 
+              className="flex items-center gap-2 h-12 px-4 rounded-xl border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showFilterDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <div className="py-2">
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setFilterBy('all')
+                      setShowFilterDropdown(false)
+                    }}
+                  >
+                    All Appointments
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setFilterBy('confirmed')
+                      setShowFilterDropdown(false)
+                    }}
+                  >
+                    Confirmed
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setFilterBy('pending')
+                      setShowFilterDropdown(false)
+                    }}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setFilterBy('rejected')
+                      setShowFilterDropdown(false)
+                    }}
+                  >
+                    Rejected
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+          <button
+            type="button"
+            className="rounded-full px-6 py-3 text-[13px] font-semibold uppercase tracking-[1px] text-white shadow-soft transition hover:brightness-110"
+            style={{backgroundColor: '#1f4d3e'}}
+            onClick={openModal}
+          >
+            + New Appointment
+          </button>
         </div>
       </div>
 
+
       
-      {/* Appointment Table */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200">
-          <h4 className="text-lg font-semibold text-slate-900">Appointment Schedule</h4>
-        </div>
+      {/* Appointments Table */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Client Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Therapist</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Service</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Room</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date & Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">CLIENT</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">THERAPIST</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">SERVICE</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ROOM</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DATE & TIME</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">STATUS</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {appointments.map((appointment) => (
-                <tr key={appointment.id} className="hover:bg-slate-50">
+            <tbody className="divide-y divide-gray-200">
+              {filteredAppointments.map((appointment) => (
+                <tr key={appointment.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center">
-                        <span className="text-sm font-medium text-slate-600">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{backgroundColor: '#1f4d3e'}}>
+                        <span className="text-sm font-bold text-white">
                           {appointment.clientName.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-slate-900">{appointment.clientName}</div>
-                        <div className="text-sm text-slate-500">{appointment.transactionId}</div>
+                        <div className="text-sm font-semibold text-gray-900">{appointment.clientName}</div>
+                        <div className="text-xs text-gray-500">{appointment.clientId}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.therapist}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.service}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.room}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{appointment.dateTime}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{appointment.therapist}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{appointment.service}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{appointment.room}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      appointment.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' :
-                      appointment.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
-                      appointment.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-slate-100 text-slate-800'
+                    <div className="text-sm text-gray-900">{appointment.date}</div>
+                    <div className="text-xs text-gray-500">{appointment.time}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                      appointment.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                      appointment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      appointment.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
-                      {appointment.status === 'Confirmed' && 'Confirmed'}
-                      {appointment.status === 'Pending' && 'Pending'}
-                      {appointment.status === 'In Progress' && 'In Progress'}
-                      {appointment.status === 'Completed' && 'Completed'}
+                      {appointment.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <button type="button" className="text-slate-600 hover:text-slate-900" title="View">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        type="button" 
+                        className="text-gray-600 hover:text-blue-600 transition-colors" 
+                        title="View"
+                        onClick={() => {
+                          setSelectedAppointment(appointment)
+                          setIsViewModalOpen(true)
+                        }}
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </button>
-                      <button type="button" className="text-slate-600 hover:text-slate-900" title="Edit">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <button 
+                        type="button" 
+                        className="text-gray-600 hover:text-blue-600 transition-colors" 
+                        title="Edit"
+                        onClick={() => {
+                          const editForm = {
+                            fullName: appointment.clientName,
+                            gender: '',
+                            ageOrDob: '',
+                            phone: '',
+                            email: '',
+                            address: '',
+                            skinType: '',
+                            allergies: '',
+                            medicalConditions: '',
+                            preferredService: appointment.service,
+                            appointmentDate: appointment.date,
+                            appointmentTime: appointment.time,
+                            selectedService: appointment.service,
+                            assignedTherapist: appointment.therapist,
+                            assignedRoom: appointment.room,
+                            paymentMethod: 'Credit/Debit Card',
+                            discount: '',
+                            cardHolderName: '',
+                            cardNumber: '',
+                            expiryDate: '',
+                            cvv: '',
+                            upiId: '',
+                            upiApp: '',
+                            termsAccepted: true,
+                            cancellationAccepted: false,
+                            safetyAccepted: false,
+                          }
+                          setForm(editForm)
+                          setEditingAppointment(appointment)
+                          setIsEditFormModalOpen(true)
+                          setStep(1)
+                        }}
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button type="button" className="text-red-600 hover:text-red-900" title="Delete">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      {appointment.status === 'Pending' && (
+                        <>
+                          <button 
+                            className="p-2 rounded-lg border border-gray-300 bg-white text-green-600 hover:bg-green-50 transition-colors"
+                            onClick={() => {
+                              handleApproveAppointment(appointment.id)
+                            }}
+                            title="Approve"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button 
+                            className="p-2 rounded-lg border border-gray-300 bg-white text-red-600 hover:bg-red-50 transition-colors"
+                            onClick={() => {
+                              handleRejectAppointment(appointment.id)
+                            }}
+                            title="Reject"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                      {appointment.status !== 'Pending' && (
+                        <button 
+                          className="p-2 rounded-lg border border-gray-300 bg-white text-red-600 hover:bg-red-50 transition-colors"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this appointment?')) {
+                              setAppointments(appointments.filter(a => a.id !== appointment.id))
+                            }
+                          }}
+                          title="Delete"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -421,15 +648,40 @@ function AppointmentsView() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing <span className="font-semibold">{filteredAppointments.length}</span> of <span className="font-semibold">{appointments.length}</span> appointments
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button 
+              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-          <div className="w-full max-w-[920px] h-[calc(100vh-100px)] max-h-[860px] overflow-hidden rounded-[28px] bg-white shadow-[0_28px_60px_rgba(31,77,62,0.18)]">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-              <div>
-                <p className="text-[13px] uppercase tracking-[1.3px] text-muted">Appointment intake</p>
-                <h3 className="text-[26px] font-semibold">New appointment admission</h3>
+  <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+    <div className="w-full max-w-[920px] h-[calc(100vh-100px)] max-h-[860px] overflow-hidden rounded-[28px] bg-white shadow-[0_28px_60px_rgba(31,77,62,0.18)]">
+      <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+        <div>
+          <p className="text-[13px] uppercase tracking-[1.3px] text-muted">Appointment intake</p>
+          <h3 className="text-[26px] font-semibold">New appointment admission</h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -888,7 +1140,8 @@ function AppointmentsView() {
                     )}
                     <button
                       type="button"
-                      className="h-12 rounded-full border border-slate-300 bg-white px-6 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                      className="h-12 rounded-full border px-6 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{borderColor: '#1f4d3e', color: '#1f4d3e'}}
                       onClick={handleStepNext}
                       disabled={!stepCompletion[step]}
                     >
@@ -896,12 +1149,684 @@ function AppointmentsView() {
                     </button>
                     <button
                       type="submit"
-                      className="h-12 rounded-full bg-primary px-6 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="h-12 rounded-full px-6 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      style={{backgroundColor: '#2f7d6d'}}
                       disabled={step === 5 ? !stepCompletion[5] : !stepCompletion[step]}
                     >
                       {step < 4 ? 'Next' : step === 4 ? 'Next' : 'Confirm Booking'}
                     </button>
                   </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isViewModalOpen && selectedAppointment && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-[0_28px_60px_rgba(31,77,62,0.18)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Appointment Details</h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setIsViewModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Client:</span>
+                <span className="font-semibold">{selectedAppointment.clientName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">ID:</span>
+                <span className="font-semibold">{selectedAppointment.clientId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Therapist:</span>
+                <span className="font-semibold">{selectedAppointment.therapist}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Service:</span>
+                <span className="font-semibold">{selectedAppointment.service}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Room:</span>
+                <span className="font-semibold">{selectedAppointment.room}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Date:</span>
+                <span className="font-semibold">{selectedAppointment.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Time:</span>
+                <span className="font-semibold">{selectedAppointment.time}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Transaction ID:</span>
+                <span className="font-semibold font-mono">{selectedAppointment.transactionId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status:</span>
+                <span className={`font-semibold ${
+                  selectedAppointment.status === 'Confirmed' ? 'text-green-600' :
+                  selectedAppointment.status === 'Pending' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>{selectedAppointment.status}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="mt-6 w-full h-10 rounded-full bg-primary text-white font-semibold hover:brightness-110 transition"
+              onClick={() => setIsViewModalOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isEditFormModalOpen && (
+  <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+    <div className="w-full max-w-[920px] h-[calc(100vh-100px)] max-h-[860px] overflow-hidden rounded-[28px] bg-white shadow-[0_28px_60px_rgba(31,77,62,0.18)]">
+      <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+        <div>
+          <p className="text-[13px] uppercase tracking-[1.3px] text-muted">Edit Appointment</p>
+          <h3 className="text-[26px] font-semibold">Update Appointment Details</h3>
+        </div>
+        <button
+          type="button"
+          className="text-muted transition hover:text-ink"
+          onClick={() => setIsEditFormModalOpen(false)}
+          aria-label="Close form"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="flex h-full flex-col overflow-hidden px-6 py-5">
+        <div className="mb-5 grid gap-3 md:grid-cols-5">
+          {[
+            { id: 1, label: 'Client details' },
+            { id: 2, label: 'Health details' },
+            { id: 3, label: 'Appointment' },
+            { id: 4, label: 'Payment' },
+            { id: 5, label: 'Terms' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setStep(item.id)}
+              className={`rounded-2xl border px-3 py-3 text-left text-sm transition ${
+                step === item.id
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-slate-200 bg-slate-50 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full border ${
+                    stepCompletion[item.id]
+                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700'
+                      : 'border-slate-300 bg-white text-slate-500'
+                  }`}
+                >
+                  {stepCompletion[item.id] ? '✓' : item.id}
+                </span>
+                <span className="font-medium">Step {item.id}</span>
+              </div>
+              <p className="mt-2 text-[11px] uppercase tracking-[1px] text-muted">{item.label}</p>
+            </button>
+          ))}
+        </div>
+
+        <form className="flex h-full flex-col overflow-hidden" onSubmit={handleStepNext}>
+          <div className="flex-1 overflow-y-auto pr-1">
+            {step === 1 && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                  <h4 className="text-lg font-semibold">1. Basic Client Details</h4>
+                  <label className="block text-sm text-slate-800">
+                    Full Name
+                    <input
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      value={form.fullName}
+                      onChange={handleChange('fullName')}
+                      placeholder="Enter full name"
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-800">
+                    Gender
+                    <select
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      value={form.gender}
+                      onChange={handleChange('gender')}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Female">Female</option>
+                      <option value="Male">Male</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                  </label>
+                  <label className="block text-sm text-slate-800">
+                    Age / Date of Birth
+                    <input
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      value={form.ageOrDob}
+                      onChange={handleChange('ageOrDob')}
+                      placeholder="e.g. 34 / 1990-08-12"
+                    />
+                  </label>
+                </div>
+                <div className="space-y-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                  <h4 className="text-lg font-semibold invisible">placeholder</h4>
+                  <label className="block text-sm text-slate-800">
+                    Phone Number
+                    <input
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      type="tel"
+                      value={form.phone}
+                      onChange={handleChange('phone')}
+                      placeholder="+91 98765 43210"
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-800">
+                    Email ID
+                    <input
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange('email')}
+                      placeholder="client@example.com"
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-800">
+                    Address
+                    <textarea
+                      rows="3"
+                      className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 resize-none"
+                      value={form.address}
+                      onChange={handleChange('address')}
+                      placeholder="Client address"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                <h4 className="text-lg font-semibold">2. Health & Preference Details</h4>
+                <label className="block text-sm text-slate-800">
+                  Skin type / allergies
+                  <input
+                    className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                    value={form.skinType}
+                    onChange={handleChange('skinType')}
+                    placeholder="Example: sensitive, oily, nut allergy"
+                  />
+                </label>
+                <label className="block text-sm text-slate-800">
+                  Medical conditions (if any)
+                  <textarea
+                    rows="4"
+                    className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 resize-none"
+                    value={form.medicalConditions}
+                    onChange={handleChange('medicalConditions')}
+                    placeholder="Type medical conditions here"
+                  />
+                </label>
+                <label className="block text-sm text-slate-800">
+                  Preferred services
+                  <select
+                    className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                    value={form.preferredService}
+                    onChange={handleChange('preferredService')}
+                  >
+                    {serviceGroups.map((group) => (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.options.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                <h4 className="text-lg font-semibold">3. Appointment Details</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm text-slate-800">
+                    Date of visit
+                    <input
+                      type="date"
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      value={form.appointmentDate || ''}
+                      onChange={handleChange('appointmentDate')}
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-800">
+                    Time of visit
+                    <input
+                      type="time"
+                      className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                      value={form.appointmentTime || ''}
+                      onChange={handleChange('appointmentTime')}
+                    />
+                  </label>
+                </div>
+                <label className="block text-sm text-slate-800">
+                  Selected service
+                  <select
+                    className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                    value={form.selectedService}
+                    onChange={handleChange('selectedService')}
+                  >
+                    {serviceGroups.flatMap((group) => group.options).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-800">
+                  Assigned therapist
+                  <select
+                    className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                    value={form.assignedTherapist}
+                    onChange={handleChange('assignedTherapist')}
+                  >
+                    {therapists.map((therapist) => (
+                      <option key={therapist.value} value={therapist.value}>
+                        {therapist.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-800">
+                  Room assignment
+                  <select
+                    className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                    value={form.assignedRoom}
+                    onChange={handleChange('assignedRoom')}
+                  >
+                    {rooms.map((room) => (
+                      <option key={room.value} value={room.value}>
+                        {room.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-5">
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                  <h4 className="text-lg font-semibold mb-4">4. Payment Method</h4>
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-3 text-sm text-slate-800">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="Credit/Debit Card"
+                        checked={form.paymentMethod === 'Credit/Debit Card'}
+                        onChange={handleChange('paymentMethod')}
+                        className="accent-primary"
+                      />
+                      Credit / Debit Card
+                    </label>
+                    <label className="flex items-center gap-3 text-sm text-slate-800">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="UPI"
+                        checked={form.paymentMethod === 'UPI'}
+                        onChange={handleChange('paymentMethod')}
+                        className="accent-primary"
+                      />
+                      UPI
+                    </label>
+                  </div>
+
+                  {form.paymentMethod === 'Credit/Debit Card' && (
+                    <div className="mt-5 space-y-4 rounded-[18px] border border-blue-200 bg-blue-50 p-4">
+                      <h5 className="text-sm font-semibold text-slate-800">Card Details</h5>
+                      <label className="block text-sm text-slate-800">
+                        Card Holder Name
+                        <input
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                          value={form.cardHolderName}
+                          onChange={handleChange('cardHolderName')}
+                          placeholder="John Doe"
+                        />
+                      </label>
+                      <label className="block text-sm text-slate-800">
+                        Card Number
+                        <input
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                          value={form.cardNumber}
+                          onChange={handleChange('cardNumber')}
+                          placeholder="4532 1234 5678 9010"
+                        />
+                      </label>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <label className="block text-sm text-slate-800">
+                          Expiry Date
+                          <input
+                            className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                            value={form.expiryDate}
+                            onChange={handleChange('expiryDate')}
+                            placeholder="MM/YY"
+                          />
+                        </label>
+                        <label className="block text-sm text-slate-800">
+                          CVV
+                          <input
+                            className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                            value={form.cvv}
+                            onChange={handleChange('cvv')}
+                            placeholder="123"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {form.paymentMethod === 'UPI' && (
+                    <div className="mt-5 space-y-4 rounded-[18px] border border-purple-200 bg-purple-50 p-4">
+                      <h5 className="text-sm font-semibold text-slate-800">UPI Details</h5>
+                      <div className="grid gap-4 md:grid-cols-2 items-start">
+                        <div>
+                          <label className="block text-sm text-slate-800">
+                            UPI ID
+                            <input
+                              className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                              value={form.upiId}
+                              onChange={handleChange('upiId')}
+                              placeholder="you@upi"
+                            />
+                          </label>
+                          <label className="block text-sm text-slate-800 mt-4">
+                            App Used
+                            <select
+                              className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                              value={form.upiApp}
+                              onChange={handleChange('upiApp')}
+                            >
+                              <option value="">Select UPI App</option>
+                              <option value="GPay">Google Pay (GPay)</option>
+                              <option value="PhonePe">PhonePe</option>
+                              <option value="Paytm">Paytm</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <div className="rounded-[12px] border border-slate-300 bg-white p-3">
+                            <img
+                              src="https://static.vecteezy.com/system/resources/previews/002/258/271/original/template-of-qr-code-ready-to-scan-with-smartphone-illustration-vector.jpg"
+                              alt="QR Code"
+                              className="h-32 w-32 object-cover"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-5">
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                  <h4 className="text-lg font-semibold mb-4">5. Terms & Conditions</h4>
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-slate-200">
+                      <h5 className="font-semibold text-slate-800 mb-3">Terms & Conditions (Simple)</h5>
+                      <ul className="space-y-2 text-sm text-slate-600">
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I will arrive on time for my appointment.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I agree to make the payment before or after the service.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I can cancel or reschedule my appointment in advance.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I will inform any health issues or allergies before the service.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I understand that packages are non-refundable and have validity.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">✓</span>
+                          <span>I am responsible for my personal belongings.</span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.termsAccepted}
+                          onChange={handleChange('termsAccepted')}
+                          className="mt-1 accent-primary w-4 h-4"
+                        />
+                        <span className="font-medium text-amber-800">
+                          ✓ I agree to the Terms & Conditions
+                          <span className="text-red-500 ml-1">*</span>
+                        </span>
+                      </label>
+                      <p className="text-xs text-amber-700 mt-2 ml-7">This checkbox is mandatory to proceed with booking.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      type="button"
+                      className="h-12 rounded-full bg-primary px-8 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      disabled={!stepCompletion[5]}
+                      onClick={() => {
+                        setAppointments(appointments.map(apt => 
+                          apt.id === editingAppointment.id 
+                            ? {...apt, clientName: form.fullName, service: form.selectedService, therapist: form.assignedTherapist, room: form.assignedRoom}
+                            : apt
+                        ))
+                        setIsEditFormModalOpen(false)
+                        setStep(1)
+                        setForm(initialFormState)
+                      }}
+                    >
+                      Update Appointment
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted">
+              {step < 4
+                ? 'Complete the current step to continue.'
+                : step === 4
+                ? 'Select payment method to continue.'
+                : 'Agree to terms to confirm update.'}
+            </div>
+            <div className="flex items-center gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  className="h-12 rounded-full border border-slate-300 bg-white px-6 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                  onClick={handleStepBack}
+                >
+                  Back
+                </button>
+              )}
+              {step < 5 && (
+                <button
+                  type="button"
+                  className="h-12 rounded-full border px-6 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{borderColor: '#1f4d3e', color: '#1f4d3e'}}
+                  onClick={handleStepNext}
+                  disabled={!stepCompletion[step]}
+                >
+                  Next
+                </button>
+              )}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
+
+      {isEditModalOpen && editingAppointment && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+          <div className="w-full max-w-[920px] h-[calc(100vh-100px)] max-h-[860px] overflow-hidden rounded-[28px] bg-white shadow-[0_28px_60px_rgba(31,77,62,0.18)]">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <p className="text-[13px] uppercase tracking-[1.3px] text-muted">Edit Appointment</p>
+                <h3 className="text-[26px] font-semibold">Update Appointment Details</h3>
+              </div>
+              <button
+                type="button"
+                className="text-muted transition hover:text-ink"
+                onClick={() => setIsEditModalOpen(false)}
+                aria-label="Close form"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex h-full flex-col overflow-hidden px-6 py-5">
+              <form className="flex h-full flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto pr-1">
+                  <div className="space-y-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                    <h4 className="text-lg font-semibold">Appointment Information</h4>
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm text-slate-800">Client Name</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.clientName}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-slate-800">Service</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.service}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm text-slate-800">Date</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.date}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-slate-800">Time</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.time}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm text-slate-800">Therapist</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.therapist}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-slate-800">Room</label>
+                        <input
+                          disabled
+                          className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                          value={editingAppointment.room}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-slate-800">Status</label>
+                      <select 
+                        className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-white px-4 text-sm text-slate-900"
+                        defaultValue={editingAppointment.status}
+                        onChange={(e) => {
+                          setEditingAppointment({...editingAppointment, status: e.target.value})
+                        }}
+                      >
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-slate-800">Transaction ID</label>
+                      <input
+                        disabled
+                        className="mt-2 h-11 w-full rounded-[18px] border border-slate-300 bg-gray-100 px-4 text-sm text-slate-900 cursor-not-allowed"
+                        value={editingAppointment.transactionId}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    className="h-12 rounded-full border border-slate-300 bg-white px-6 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    onClick={() => setIsEditModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="h-12 rounded-full px-6 text-sm font-semibold text-white transition hover:brightness-110"
+                    style={{backgroundColor: '#1f4d3e'}}
+                    onClick={() => {
+                      setAppointments(appointments.map(apt => 
+                        apt.id === editingAppointment.id ? editingAppointment : apt
+                      ))
+                      setIsEditModalOpen(false)
+                    }}
+                  >
+                    Update Appointment
+                  </button>
                 </div>
               </form>
             </div>
